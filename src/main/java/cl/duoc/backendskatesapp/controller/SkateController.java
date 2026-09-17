@@ -24,6 +24,16 @@ public class SkateController {
         return skateService.listarTodos();
     }
 
+    @GetMapping("/modelos")
+    public List<String> listarModelos() {
+        return skateService.listarModelos();
+    }
+
+    @GetMapping("/modelo/{modelo}")
+    public List<Skate> listarPorModelo(@PathVariable String modelo) {
+        return skateService.listarPorModelo(modelo);
+    }
+
     @GetMapping("/{id}")
     public Skate obtener(@PathVariable Long id) {
         return skateService.buscarPorId(id);

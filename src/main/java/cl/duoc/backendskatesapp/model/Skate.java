@@ -19,6 +19,10 @@ public class Skate {
     @DecimalMin(value = "0.0", inclusive = false, message = "La medida debe ser mayor que cero")
     private Double medida;
 
+    @NotNull(message = "El wheelbase es obligatorio")
+    @DecimalMin(value = "0.0", inclusive = false, message = "El wheelbase debe ser mayor que cero")
+    private Double wheelbase;
+
     @NotNull(message = "El stock es obligatorio")
     @Min(value = 0, message = "El stock no puede ser negativo")
     private Integer stock;
@@ -26,11 +30,12 @@ public class Skate {
     public Skate() {
     }
 
-    public Skate(Long id, String modelo, String marca, Double medida, Integer stock) {
+    public Skate(Long id, String modelo, String marca, Double medida, Double wheelbase, Integer stock) {
         this.id = id;
         this.modelo = modelo;
         this.marca = marca;
         this.medida = medida;
+        this.wheelbase = wheelbase;
         this.stock = stock;
     }
 
@@ -42,6 +47,8 @@ public class Skate {
     public void setMarca(String marca) { this.marca = marca; }
     public Double getMedida() { return medida; }
     public void setMedida(Double medida) { this.medida = medida; }
+    public Double getWheelbase() { return wheelbase; }
+    public void setWheelbase(Double wheelbase) { this.wheelbase = wheelbase; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
 }

@@ -19,14 +19,58 @@ public class SkateService {
 
     @PostConstruct
     public void cargarDatosDeEjemplo() {
-        crear(new Skate(null, "Street", "DC", 7.5, 15));
-        crear(new Skate(null, "Street", "Maui & Sons", 8.0, 8));
-        crear(new Skate(null, "Street", "Polemic", 8.5, 8));
+        crear(new Skate(null, "Street", "DC", 7.5, null, 8));
+        crear(new Skate(null, "Street", "DC", 8.0, null, 8));
+        crear(new Skate(null, "Street", "DC", 8.5, null, 8));
+        crear(new Skate(null, "Street", "Maui & Sons", 7.5, null, 8));
+        crear(new Skate(null, "Street", "Maui & Sons", 8.0, null, 8));
+        crear(new Skate(null, "Street", "Maui & Sons", 8.5, null, 8));
+        crear(new Skate(null, "Street", "Polemic", 7.5, null, 8));
+        crear(new Skate(null, "Street", "Polemic", 8.0, null, 8));
+        crear(new Skate(null, "Street", "Polemic", 8.5, null, 8));
+        crear(new Skate(null, "Longboard", "Loaded", null, 20.22, 8));
+        crear(new Skate(null, "Longboard", "Loaded", null, 22.24, 8));
+        crear(new Skate(null, "Longboard", "Loaded", null, 24.26, 8));
+        crear(new Skate(null, "Longboard", "Loaded", null, 26., 8));
+        crear(new Skate(null, "Longboard", "Arbor", null, 20.22, 8));
+        crear(new Skate(null, "Longboard", "Arbor", null, 22.24, 8));
+        crear(new Skate(null, "Longboard", "Arbor", null, 24.26, 8));
+        crear(new Skate(null, "Longboard", "Arbor", null, 26., 8));
+        crear(new Skate(null, "Longboard", "Landyachtz", null, 20.22, 8));
+        crear(new Skate(null, "Longboard", "Landyachtz", null, 22.24, 8));
+        crear(new Skate(null, "Longboard", "Landyachtz", null, 24.26, 8));
+        crear(new Skate(null, "Downhill", "Landyachtz", null, 20., 8));
+        crear(new Skate(null, "Downhill", "Landyachtz", null, 22., 8));
+        crear(new Skate(null, "Downhill", "Landyachtz", null, 24., 8));
+        crear(new Skate(null, "Downhill", "Landyachtz", null, 26., 8));
+        crear(new Skate(null, "Downhill", "Rayne", null, 20., 8));
+        crear(new Skate(null, "Downhill", "Rayne", null, 22., 8));
+        crear(new Skate(null, "Downhill", "Rayne", null, 24., 8));
+        crear(new Skate(null, "Downhill", "Rayne", null, 26., 8));
+        crear(new Skate(null, "Downhill", "Madrid", null, 20., 8));
+        crear(new Skate(null, "Downhill", "Madrid", null, 22., 8));
+        crear(new Skate(null, "Downhill", "Madrid", null, 24., 8));
+        crear(new Skate(null, "Downhill", "Madrid", null, 26., 8));
     }
 
     public List<Skate> listarTodos() {
         return inventario.values().stream()
                 .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Skate> listarPorModelo(String modelo) {
+        return inventario.values().stream()
+                .filter(skate -> skate.getModelo().equalsIgnoreCase(modelo))
+                .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<String> listarModelos() {
+        return inventario.values().stream()
+                .map(Skate::getModelo)
+                .distinct()
+                .sorted()
                 .collect(Collectors.toList());
     }
 
@@ -50,6 +94,7 @@ public class SkateService {
         existente.setModelo(datos.getModelo());
         existente.setMarca(datos.getMarca());
         existente.setMedida(datos.getMedida());
+        existente.setWheelbase(datos.getWheelbase());
         existente.setStock(datos.getStock());
         return existente;
     }
