@@ -25,4 +25,16 @@ El microservicio expone los siguientes endpoints principales bajo la ruta base `
 * **`PUT /api/skate/{id}`** - Actualiza la información de un skate existente.
 * **`DELETE /api/skate/{id}`** - Elimina un registro del sistema.
 
+## Base de datos local H2
+
+El backend usa H2 en modo archivo para desarrollo local. Los datos se guardan en `./data/skates` y permanecen disponibles entre reinicios.
+
+Para ejecutar el backend:
+
+```powershell
+./mvnw.cmd spring-boot:run
+```
+
+Hibernate creará o actualizará la tabla `skates` automáticamente y la aplicación cargará los datos de prueba si la tabla está vacía. La consola H2 queda disponible en `http://localhost:8080/h2-console`.
+
 ---

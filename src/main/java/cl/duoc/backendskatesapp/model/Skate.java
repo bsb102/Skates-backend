@@ -4,9 +4,18 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
+@Entity
+@Table(name = "skates")
 public class Skate {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "El modelo es obligatorio")
@@ -15,11 +24,9 @@ public class Skate {
     @NotBlank(message = "La marca es obligatoria")
     private String marca;
 
-    @NotNull(message = "La medida es obligatoria")
     @DecimalMin(value = "0.0", inclusive = false, message = "La medida debe ser mayor que cero")
     private Double medida;
 
-    @NotNull(message = "El wheelbase es obligatorio")
     @DecimalMin(value = "0.0", inclusive = false, message = "El wheelbase debe ser mayor que cero")
     private Double wheelbase;
 
