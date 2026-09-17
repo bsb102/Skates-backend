@@ -202,6 +202,82 @@ POST /api/skate con token de admin -> 201
 - Dependencia `aws-amplify`: eliminada de los dos frontends.
 - Ngrok: eliminado del proyecto y del dispositivo.
 
+## Entorno instalado y verificado
+
+Durante la puesta a punto del entorno de trabajo se instalaron y comprobaron las herramientas necesarias para ejecutar el proyecto completo en local:
+
+- Java 17 (Microsoft OpenJDK 17)
+- Node.js LTS
+- Maven 3.9.9
+- Wrapper Maven restaurado para `./mvnw.cmd`
+
+Se confirmó además que:
+
+- El backend arranca con Spring Boot en `http://localhost:8080`.
+- La tienda de clientes queda disponible en `http://localhost:5173`.
+- El panel admin queda disponible en `http://localhost:5174`.
+- La base de datos se guarda en `./data/skates` usando H2 en modo archivo.
+- La carga inicial de datos crea 32 skates de prueba al arrancar con la tabla vacía.
+
+## Credenciales locales y autenticación
+
+Usuarios de demostración aceptados por el backend local:
+
+```text
+Cliente:
+usuario: cliente
+contraseña: cliente123
+
+Administrador:
+usuario: admin
+contraseña: admin123
+```
+
+La configuración actual usa H2 local con usuario `sa` y contraseña vacía. El JWT se firma localmente con la clave por defecto de `app.security.jwt-secret` en `application.properties` y puede sobreescribirse con la variable de entorno `JWT_SECRET`.
+
+## Verificación final del proyecto
+
+Se ejecutaron comprobaciones reales sobre el proyecto completo:
+
+```powershell
+./mvnw.cmd test
+```
+
+Resultado verificado:
+
+- 2 test ejecutados
+- 0 fallos
+- 0 errores
+- BUILD SUCCESS
+
+Y se validó también la compilación de los frontends con Vite:
+
+```powershell
+cd "C:\Users\braul\OneDrive\Escritorio\Skates-backend-main\Skates-tienda-main"
+npm install
+npm run build
+
+cd "C:\Users\braul\OneDrive\Escritorio\Skates-backend-main\Skates-admin"
+npm install
+npm run build
+```
+
+Resultado verificado:
+
+- Tienda: build completado con éxito.
+- Admin: build completado con éxito.
+
+## Panel admin con stock y pedidos
+
+El panel administrativo quedó ampliado para que el usuario administrador pueda:
+
+- ver el stock total real cargado desde la base de datos H2;
+- ver el número de modelos y productos con stock bajo;
+- revisar una tabla con el inventario completo desde el backend;
+- revisar un panel de pedidos recientes para operación y seguimiento.
+
+Esto se refleja en la vista del admin al autenticarse con `admin / admin123`.
+
 ## Sobre los commits de GitHub
 
 Para crear commits y subirlos a GitHub se necesita que la carpeta tenga un repositorio Git local y un remoto configurado. En este entorno Git no está instalado y la carpeta actual no contiene `.git`, por lo que no es posible crear commits ni hacer `push` desde aquí.
