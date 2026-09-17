@@ -13,7 +13,7 @@
 
 ---
 
-## 📡 Endpoints Principales (`/api/skate`)
+## Endpoints Principales (`/api/skate`)
 
 El microservicio expone los siguientes endpoints principales bajo la ruta base `/api/skate`:
 
