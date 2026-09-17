@@ -19,6 +19,8 @@ El microservicio expone los siguientes endpoints principales bajo la ruta base `
 
 * **`GET /api/skate`** - Lista todos los skates y productos disponibles.
 * **`GET /api/skate/{id}`** - Obtiene los detalles de un skate específico mediante su ID.
+* **`GET /api/skate/modelos`** - Lista los tipos de skate disponibles sin repetir.
+* **`GET /api/skate/modelo/{modelo}`** - Lista los skates de un modelo específico, por ejemplo `Street`, `Longboard` o `Downhill`.
 * **`POST /api/skate`** - Da de alta un nuevo producto/skate en el sistema.
 * **`PUT /api/skate/{id}`** - Actualiza la información de un skate existente.
 * **`DELETE /api/skate/{id}`** - Elimina un registro del sistema.
