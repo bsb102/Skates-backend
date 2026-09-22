@@ -63,6 +63,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/payments/webpay/return").permitAll()
                     .requestMatchers("/error").permitAll()
                         .requestMatchers("/h2-console").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()

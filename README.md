@@ -1,6 +1,12 @@
 # Skates Backend
 
-API REST para administrar productos de una tienda de skate. El proyecto está construido con Java, Spring Boot, Spring Data JPA, Hibernate, Spring Security, JWT y H2.
+	"sessionId": "cliente-123",
+	"items": [
+		{
+			"skateId": 1,
+			"quantity": 2
+		}
+	]
 
 ## Requisitos
 
@@ -108,6 +114,84 @@ Los `GET` de skates son públicos. Las operaciones `POST`, `PUT` y `DELETE` requ
 | `POST` | `/api/skate` | ADMIN | Crea un producto. |
 | `PUT` | `/api/skate/{id}` | ADMIN | Actualiza un producto. |
 | `DELETE` | `/api/skate/{id}` | ADMIN | Elimina un producto. |
+
+### Pagos con Webpay Plus
+
+El backend integra Webpay Plus usando el SDK oficial de Transbank en ambiente de integración. El flujo es:
+
+1. El frontend solicita una transacción al backend.
+2. El backend devuelve `token`, `url` y `buyOrder`.
+3. El frontend crea un formulario `POST` hacia `url` con el campo `token_ws` y lo envía a Webpay.
+4. Webpay devuelve el resultado a `/api/payments/webpay/return`.
+5. El backend confirma la transacción y valida que la orden y el monto coincidan con lo registrado en H2.
+
+| Método | URL | Acceso | Descripción |
+| --- | --- | --- | --- |
+| `POST` | `/api/payments/webpay/transactions` | Autenticado | Crea una transacción Webpay. |
+| `POST` | `/api/payments/webpay/return` | Público | Recibe el retorno de Webpay y confirma el pago. |
+| `POST` | `/api/payments/webpay/commit?token_ws={token}` | Autenticado | Confirma manualmente una transacción. |
+| `GET` | `/api/payments/webpay/status?token_ws={token}` | Autenticado | Consulta el estado en Transbank. |
+
+El backend valida que los productos existan al crear la transacción, pero no modifica el stock. El descuento se realiza únicamente después de una confirmación Webpay con `status = AUTHORIZED` y `response_code = 0`.
+
+Para iniciar un pago, envía:
+
+```json
+{
+	"amount": 10000,
+	"sessionId": "cliente-123"
+}
+```
+
+El campo `sessionId` es opcional. La respuesta contiene un token y la URL de Webpay:
+
+```json
+{
+	"buyOrder": "SK...",
+	"sessionId": "cliente-123",
+	"token": "...",
+	"url": "https://webpay3gint.transbank.cl/webpayserver/initTransaction",
+	"formAction": "https://webpay3gint.transbank.cl/webpayserver/initTransaction"
+}
+```
+
+El frontend debe enviar el token mediante un formulario HTML, no como un encabezado JSON:
+
+```html
+<form method="post" action="{url}">
+	<input type="hidden" name="token_ws" value="{token}">
+	<button type="submit">Pagar</button>
+</form>
+```
+
+Después del retorno de Webpay, la respuesta del backend incluye:
+
+```json
+{
+	"buyOrder": "SK...",
+	"token": "...",
+	"paymentStatus": "COMPLETED",
+	"completed": true,
+	"stockUpdated": true,
+	"authorizationCode": "123456",
+	"message": "Compra autorizada y stock actualizado"
+}
+```
+
+Si Transbank rechaza el pago, `paymentStatus` será `REJECTED` y el stock no cambiará. Si el pago fue autorizado pero no existe stock suficiente, será `STOCK_REVIEW`; la actualización completa se cancela y no se descuenta ningún producto. Las confirmaciones repetidas de un mismo token no vuelven a descontar stock.
+
+Para pruebas de integración, Transbank documenta la tarjeta VISA aprobada `4051 8856 0044 6623`, CVV `123`, cualquier fecha de expiración, RUT `11.111.111-1` y clave `123`. Estas tarjetas solo deben usarse en el ambiente de integración.
+
+Las credenciales y el callback se configuran mediante variables de entorno:
+
+```powershell
+$env:TRANSBANK_ENVIRONMENT="TEST"
+$env:TRANSBANK_COMMERCE_CODE="597055555532"
+$env:TRANSBANK_API_KEY_SECRET="579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C"
+$env:TRANSBANK_RETURN_URL="http://localhost:8080/api/payments/webpay/return"
+```
+
+Si ejecutas el backend en otro puerto, actualiza también `TRANSBANK_RETURN_URL`. Nunca uses las credenciales de integración en producción.
 
 ## Crear y actualizar productos
 
