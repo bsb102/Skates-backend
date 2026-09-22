@@ -9,29 +9,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-
-    @Bean
-    WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers("/api/auth/login");
-    }
 
     @Bean
     SecretKey jwtSecretKey(@Value("${app.security.jwt-secret}") String secret) {
@@ -64,7 +58,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/skate/**").hasAuthority("ROLE_CLIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/skate/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/skate/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/skate/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/skate/**").hasAuthority("ROLE_ADMIN")
