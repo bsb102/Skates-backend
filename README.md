@@ -347,7 +347,7 @@ Los errores de validación y los productos inexistentes se devuelven como JSON c
 
 ## Estructura principal
 
-```text
+```
 src/main/java/cl/duoc/backendskatesapp/
 ├── config/       Seguridad y CORS
 ├── controller/   Endpoints REST y manejo de errores
@@ -374,3 +374,10 @@ Verifica que hayas ejecutado `./mvnw.cmd clean package` o `./mvnw.cmd spring-boo
 ### No aparecen los datos de ejemplo
 
 Comprueba que estás usando la URL `jdbc:h2:file:./data/skates` y que la tabla `skates` no contiene registros previos. Los datos iniciales solo se cargan cuando la tabla está vacía.
+
+### Simular transsacción Webpay
+
+Para simular el pago con la api Webpay se debe ingresar a la pagina:
+`https://www.transbankdevelopers.cl/documentacion/como_empezar#tarjetas-de-prueba`
+
+Usando el apartado de `Tarjetas de Prueba`
