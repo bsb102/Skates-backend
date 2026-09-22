@@ -196,6 +196,31 @@ Hibernate usa `ddl-auto=update`, por lo que crea o actualiza la tabla sin borrar
 
 No elimines los archivos de `data/` si necesitas conservar los datos locales.
 
+### Simular una compra desde la consola H2
+
+Para simular la compra de una unidad del skate con `ID = 1`, ejecuta en el editor SQL de H2:
+
+```sql
+UPDATE SKATES SET STOCK = STOCK - 1 WHERE ID = 1;
+```
+
+Esta consulta realiza lo siguiente:
+
+- Busca el registro de la tabla `SKATES` cuyo `ID` sea `1`.
+- Disminuye su valor de `STOCK` en una unidad.
+- Si el stock actual era `8`, después de la compra quedará en `7`.
+- Solo modifica ese registro; los demás productos no cambian.
+
+Después de ejecutar la consulta, H2 mostrará la cantidad de filas afectadas. Lo esperado es `1` si existe el producto con `ID = 1`. Para verificar el nuevo stock, ejecuta:
+
+```sql
+SELECT ID, MODELO, MARCA, STOCK
+FROM SKATES
+WHERE ID = 1;
+```
+
+La consulta de simulación no valida que el stock sea mayor que cero. Si se ejecuta cuando `STOCK` vale `0`, podría quedar en `-1`; en una compra real conviene validar el stock antes de descontarlo.
+
 ## CORS
 
 El backend permite solicitudes desde:
