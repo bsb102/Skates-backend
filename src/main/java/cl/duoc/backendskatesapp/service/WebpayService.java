@@ -46,7 +46,7 @@ public class WebpayService {
 
     private static final Logger logger = LoggerFactory.getLogger(WebpayService.class);
 
-    // 1. Constructor principal para Spring Boot (Sin RestClient.Builder en los parámetros)
+    // 1. Constructor principal para Spring Boot (Apunta la returnUrl por defecto al frontend)
     @Autowired
     public WebpayService(
             PaymentTransactionRepository paymentTransactionRepository,
@@ -54,7 +54,7 @@ public class WebpayService {
             @Value("${transbank.commerce-code:597055555532}") String commerceCode,
             @Value("${transbank.api-key-secret:579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C}") String apiKeySecret,
             @Value("${transbank.create-url:https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions}") String createUrl,
-            @Value("${transbank.return-url:http://localhost:5173/pago/resultado}") String returnUrl) {
+            @Value("${transbank.return-url:http://localhost:5173/}") String returnUrl) {
         
         this.transaction = new WebpayPlus.Transaction(
             new WebpayOptions(commerceCode, apiKeySecret, IntegrationType.TEST)
@@ -62,14 +62,14 @@ public class WebpayService {
         
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.skateRepository = skateRepository;
-        this.restClient = RestClient.create(); // Se instancia directamente
+        this.restClient = RestClient.create();
         this.commerceCode = commerceCode;
         this.apiKeySecret = apiKeySecret;
         this.createUrl = createUrl;
         this.returnUrl = returnUrl;
     }
 
-    // 2. Constructor secundario EXCLUSIVO para las pruebas unitarias (Mocks)
+    // 2. Constructor secundario para pruebas unitarias (Mocks)
     public WebpayService(
             WebpayPlus.Transaction transaction,
             PaymentTransactionRepository paymentTransactionRepository,
@@ -106,6 +106,7 @@ public class WebpayService {
                     "session_id", sessionId,
                     "amount", amount,
                     "return_url", returnUrl);
+            
             TransbankCreateResponse response = restClient.post()
                     .uri(createUrl)
                     .header("Tbk-Api-Key-Id", commerceCode)
@@ -121,6 +122,7 @@ public class WebpayService {
                         }
                         return clientResponse.bodyTo(TransbankCreateResponse.class);
                     });
+            
             PaymentTransaction paymentTransaction = new PaymentTransaction(
                     buyOrder,
                     sessionId,
@@ -128,9 +130,12 @@ public class WebpayService {
                     amount,
                     "INITIALIZED",
                     username);
+            
             requestedItems.forEach(item -> paymentTransaction.addItem(
                     new PaymentTransactionItem(item.skateId(), item.quantity())));
+            
             paymentTransactionRepository.save(paymentTransaction);
+            
             return new WebpayCreateResponse(
                     response.token(),
                     response.url());
@@ -154,12 +159,14 @@ public class WebpayService {
         try {
             WebpayPlusTransactionCommitResponse response = transaction.commit(token);
             validateResponse(paymentTransaction, response);
-                Optional<PaymentTransaction> existingOrder = paymentTransactionRepository
+            
+            Optional<PaymentTransaction> existingOrder = paymentTransactionRepository
                     .findByBuyOrder(response.getBuyOrder());
-                if (existingOrder.isPresent() && existingOrder.get() != paymentTransaction
+            if (existingOrder.isPresent() && existingOrder.get() != paymentTransaction
                     && "COMPLETED".equals(existingOrder.get().getStatus())) {
                 return responseFor(existingOrder.get());
-                }
+            }
+
             paymentTransaction.setAuthorizationCode(response.getAuthorizationCode());
             if (!"AUTHORIZED".equals(response.getStatus()) || response.getResponseCode() != 0) {
                 paymentTransaction.setStatus("REJECTED");
