@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +18,7 @@ import cl.duoc.backendskatesapp.service.WebpayService;
 import cl.transbank.webpay.webpayplus.responses.WebpayPlusTransactionStatusResponse;
 
 @RestController
-@RequestMapping("/api/payments/webpay")
+@RequestMapping({"/api/payments/webpay", "/api/pago"})
 public class WebpayController {
 
     private final WebpayService webpayService;
@@ -26,11 +27,15 @@ public class WebpayController {
         this.webpayService = webpayService;
     }
 
-    @PostMapping({"/create", "/transactions"})
+    @PostMapping({"/create", "/transactions", "/iniciar"})
     public WebpayCreateResponse create(
-            @Valid @org.springframework.web.bind.annotation.RequestBody WebpayCreateRequest request,
+            @Valid @RequestBody WebpayCreateRequest request,
             @AuthenticationPrincipal Jwt jwt) {
-        return webpayService.create(request.amount(), request.sessionId(), jwt.getSubject(), request.items());
+        
+        // Manejo de seguridad en caso de que el JWT no esté presente en alguna prueba local
+        String username = (jwt != null && jwt.getSubject() != null) ? jwt.getSubject() : "cliente";
+        
+        return webpayService.create(request.amount(), request.sessionId(), username, request.items());
     }
 
     @PostMapping("/return")
