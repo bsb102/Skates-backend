@@ -1,4 +1,4 @@
-package cl.duoc.backend_skates_app;
+package cl.duoc.backend_skates_app; // Paquete corregido para coincidir con tu carpeta
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,14 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import cl.duoc.backendskatesapp.controller.payment.WebpayItemRequest;
+// IMPORTANTE: Importamos tu verdadero servicio desde su paquete real
+import cl.duoc.backendskatesapp.service.WebpayService;
 import cl.duoc.backendskatesapp.controller.payment.WebpayPaymentResponse;
 import cl.duoc.backendskatesapp.model.PaymentTransaction;
 import cl.duoc.backendskatesapp.model.PaymentTransactionItem;
 import cl.duoc.backendskatesapp.model.Skate;
 import cl.duoc.backendskatesapp.repository.PaymentTransactionRepository;
 import cl.duoc.backendskatesapp.repository.SkateRepository;
-import cl.duoc.backendskatesapp.service.WebpayService;
 import cl.transbank.webpay.webpayplus.WebpayPlus;
 import cl.transbank.webpay.webpayplus.responses.WebpayPlusTransactionCommitResponse;
 
@@ -43,11 +43,14 @@ class WebpayServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // Este constructor ahora coincidirá perfectamente con el segundo constructor de tu WebpayService real
         webpayService = new WebpayService(
                 transbankTransaction,
                 paymentTransactionRepository,
                 skateRepository,
-                "http://localhost:8080/api/payments/webpay/return");
+                "http://localhost:8080/api/payments/webpay/return"
+        );
     }
 
     @Test
@@ -55,7 +58,7 @@ class WebpayServiceTest {
         PaymentTransaction payment = payment("AUTHORIZED-ORDER", "token-1", 10000, "user");
         payment.addItem(new PaymentTransactionItem(1L, 2));
         Skate skate = skate(1L, 5);
-        WebpayPlusTransactionCommitResponse response = transbankResponse("AUTHORIZED-ORDER", 10000, "AUTHORIZED", (byte) 0);
+        WebpayPlusTransactionCommitResponse response = transbankResponse("AUTHORIZED-ORDER", 10000.0, "AUTHORIZED", (byte) 0);
 
         when(paymentTransactionRepository.findByToken("token-1")).thenReturn(Optional.of(payment));
         when(transbankTransaction.commit("token-1")).thenReturn(response);
@@ -74,7 +77,7 @@ class WebpayServiceTest {
     void pagoRechazadoNoDescuentaStock() throws Exception {
         PaymentTransaction payment = payment("REJECTED-ORDER", "token-2", 10000, "user");
         payment.addItem(new PaymentTransactionItem(1L, 1));
-        WebpayPlusTransactionCommitResponse response = transbankResponse("REJECTED-ORDER", 10000, "FAILED", (byte) 5);
+        WebpayPlusTransactionCommitResponse response = transbankResponse("REJECTED-ORDER", 10000.0, "FAILED", (byte) 5);
 
         when(paymentTransactionRepository.findByToken("token-2")).thenReturn(Optional.of(payment));
         when(transbankTransaction.commit("token-2")).thenReturn(response);
@@ -93,7 +96,7 @@ class WebpayServiceTest {
         payment.addItem(new PaymentTransactionItem(2L, 1));
         Skate first = skate(1L, 5);
         Skate second = skate(2L, 0);
-        WebpayPlusTransactionCommitResponse response = transbankResponse("LOW-STOCK-ORDER", 10000, "AUTHORIZED", (byte) 0);
+        WebpayPlusTransactionCommitResponse response = transbankResponse("LOW-STOCK-ORDER", 10000.0, "AUTHORIZED", (byte) 0);
 
         when(paymentTransactionRepository.findByToken("token-3")).thenReturn(Optional.of(payment));
         when(transbankTransaction.commit("token-3")).thenReturn(response);
@@ -115,7 +118,7 @@ class WebpayServiceTest {
         PaymentTransaction payment = payment("DUPLICATE-ORDER", "token-4", 10000, "user");
         payment.addItem(new PaymentTransactionItem(1L, 1));
         Skate skate = skate(1L, 2);
-        WebpayPlusTransactionCommitResponse response = transbankResponse("DUPLICATE-ORDER", 10000, "AUTHORIZED", (byte) 0);
+        WebpayPlusTransactionCommitResponse response = transbankResponse("DUPLICATE-ORDER", 10000.0, "AUTHORIZED", (byte) 0);
 
         when(paymentTransactionRepository.findByToken("token-4")).thenReturn(Optional.of(payment));
         when(transbankTransaction.commit("token-4")).thenReturn(response);
@@ -139,7 +142,7 @@ class WebpayServiceTest {
     }
 
     private WebpayPlusTransactionCommitResponse transbankResponse(
-            String buyOrder, int amount, String status, byte responseCode) {
+            String buyOrder, double amount, String status, byte responseCode) {
         WebpayPlusTransactionCommitResponse response = new WebpayPlusTransactionCommitResponse();
         response.setBuyOrder(buyOrder);
         response.setAmount(amount);

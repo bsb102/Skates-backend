@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ import cl.duoc.backendskatesapp.repository.SkateRepository;
 import cl.transbank.webpay.webpayplus.WebpayPlus;
 import cl.transbank.webpay.webpayplus.responses.WebpayPlusTransactionCommitResponse;
 import cl.transbank.webpay.webpayplus.responses.WebpayPlusTransactionStatusResponse;
+import cl.transbank.common.IntegrationType;
+import cl.transbank.webpay.common.WebpayOptions;
 
 import cl.duoc.backendskatesapp.controller.payment.WebpayCreateResponse;
 import cl.duoc.backendskatesapp.repository.PaymentTransactionRepository;
@@ -43,35 +46,43 @@ public class WebpayService {
 
     private static final Logger logger = LoggerFactory.getLogger(WebpayService.class);
 
+    // 1. Constructor principal para Spring Boot (Sin RestClient.Builder en los parámetros)
+    @Autowired
     public WebpayService(
-            WebpayPlus.Transaction transaction,
             PaymentTransactionRepository paymentTransactionRepository,
             SkateRepository skateRepository,
-            RestClient.Builder restClientBuilder,
             @Value("${transbank.commerce-code:597055555532}") String commerceCode,
             @Value("${transbank.api-key-secret:579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C}") String apiKeySecret,
             @Value("${transbank.create-url:https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions}") String createUrl,
             @Value("${transbank.return-url:http://localhost:5173/pago/resultado}") String returnUrl) {
-        this.transaction = transaction;
+        
+        this.transaction = new WebpayPlus.Transaction(
+            new WebpayOptions(commerceCode, apiKeySecret, IntegrationType.TEST)
+        );
+        
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.skateRepository = skateRepository;
-        this.restClient = restClientBuilder.build();
+        this.restClient = RestClient.create(); // Se instancia directamente
         this.commerceCode = commerceCode;
         this.apiKeySecret = apiKeySecret;
         this.createUrl = createUrl;
         this.returnUrl = returnUrl;
     }
 
+    // 2. Constructor secundario EXCLUSIVO para las pruebas unitarias (Mocks)
     public WebpayService(
             WebpayPlus.Transaction transaction,
             PaymentTransactionRepository paymentTransactionRepository,
             SkateRepository skateRepository,
             String returnUrl) {
-        this(transaction, paymentTransactionRepository, skateRepository, RestClient.builder(),
-                "597055555532",
-                "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C",
-                "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions",
-                returnUrl);
+        this.transaction = transaction;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+        this.skateRepository = skateRepository;
+        this.restClient = RestClient.create();
+        this.commerceCode = "597055555532";
+        this.apiKeySecret = "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C";
+        this.createUrl = "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2/transactions";
+        this.returnUrl = returnUrl;
     }
 
     @Transactional
@@ -87,7 +98,7 @@ public class WebpayService {
                 : requestedSessionId;
 
         requestedItems.forEach(item -> skateRepository.findById(item.skateId())
-                .orElseThrow(() -> new SkateNoEncontradoException(item.skateId())));
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.skateId())));
 
         try {
             Map<String, Object> requestBody = Map.of(
@@ -105,7 +116,7 @@ public class WebpayService {
                         int status = clientResponse.getStatusCode().value();
                         logger.info("Transbank create URL={} status={}", createUrl, status);
                         if (status >= 400) {
-                            throw new PaymentIntegrationException(
+                            throw new RuntimeException(
                                     "Transbank respondió HTTP " + status + " en " + createUrl);
                         }
                         return clientResponse.bodyTo(TransbankCreateResponse.class);
@@ -124,10 +135,7 @@ public class WebpayService {
                     response.token(),
                     response.url());
         } catch (Exception ex) {
-            if (ex instanceof PaymentIntegrationException) {
-                throw (PaymentIntegrationException) ex;
-            }
-            throw new PaymentIntegrationException("No fue posible crear la transacción en Transbank", ex);
+            throw new RuntimeException("No fue posible crear la transacción en Transbank", ex);
         }
     }
 
@@ -135,7 +143,7 @@ public class WebpayService {
     public WebpayPaymentResponse commit(String token) {
         requireToken(token);
         PaymentTransaction paymentTransaction = paymentTransactionRepository.findByToken(token)
-                .orElseThrow(() -> new PaymentTransactionNotFoundException(token));
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada: " + token));
 
         if ("COMPLETED".equals(paymentTransaction.getStatus())
                 || "REJECTED".equals(paymentTransaction.getStatus())
@@ -173,10 +181,7 @@ public class WebpayService {
             paymentTransactionRepository.save(paymentTransaction);
             return responseFor(paymentTransaction);
         } catch (Exception ex) {
-            if (ex instanceof PaymentIntegrationException) {
-                throw (PaymentIntegrationException) ex;
-            }
-            throw new PaymentIntegrationException("No fue posible confirmar la transacción en Transbank", ex);
+            throw new RuntimeException("No fue posible confirmar la transacción en Transbank", ex);
         }
     }
 
@@ -220,16 +225,13 @@ public class WebpayService {
     public WebpayPlusTransactionStatusResponse status(String token) {
         requireToken(token);
         PaymentTransaction paymentTransaction = paymentTransactionRepository.findByToken(token)
-                .orElseThrow(() -> new PaymentTransactionNotFoundException(token));
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada: " + token));
         try {
             WebpayPlusTransactionStatusResponse response = transaction.status(token);
             validateResponse(paymentTransaction, response);
             return response;
         } catch (Exception ex) {
-            if (ex instanceof PaymentIntegrationException) {
-                throw (PaymentIntegrationException) ex;
-            }
-            throw new PaymentIntegrationException("No fue posible consultar la transacción en Transbank", ex);
+            throw new RuntimeException("No fue posible consultar la transacción en Transbank", ex);
         }
     }
 
@@ -237,7 +239,7 @@ public class WebpayService {
         boolean sameOrder = paymentTransaction.getBuyOrder().equals(response.getBuyOrder());
         boolean sameAmount = paymentTransaction.getAmount().compareTo(BigDecimal.valueOf(response.getAmount())) == 0;
         if (!sameOrder || !sameAmount) {
-            throw new PaymentIntegrationException(
+            throw new RuntimeException(
                     "La respuesta de Transbank no coincide con la orden o el monto solicitado");
         }
     }
